@@ -16,8 +16,8 @@ public class Kmeans {
 		int k=3;
 		int maxIter=25;
 		Map<String,ArrayList<String>> points=importData();
-		ArrayList<String> iniCentroids=iniCentroids(k);
-		Map<String,ArrayList<String>> iniCluster=initialClustering(points, iniCentroids, k);
+		Map<Integer, ArrayList<String>> iniCentroids=iniCentroids(k,points);
+		Map<String, ArrayList<ArrayList<String>>> iniCluster=initialClustering(points, iniCentroids, k);
 	}
 
 	//Read data. Return ArrayList of Arraylist of String
@@ -54,11 +54,12 @@ public class Kmeans {
 	}
 
 	//Random initial centroids(result arraylist store point index)
-	public static ArrayList<String> iniCentroids(int k){
-		ArrayList<String> result=new ArrayList<String>();
+	public static Map<Integer,ArrayList<String>> iniCentroids(int k,Map<String,ArrayList<String>> points){
+		Map<Integer,ArrayList<String>> result=new HashMap<Integer,ArrayList<String>>();
 		Random rd=new Random();
 		for(int i=0;i<k;i++){
-			result.add(Integer.toString(rd.nextInt(100)+1));
+			String index=Integer.toString(rd.nextInt(100)+1);
+			result.put(i+1, points.get(index));
 		}
 		System.out.println("INITIAL CENTROIDS: "+result);
 		return result;
@@ -82,41 +83,42 @@ public class Kmeans {
 	}
 
 	//Main clustering function
-	public static Map<String,ArrayList<ArrayList<String>>> initialClustering(Map<String,ArrayList<String>> points,ArrayList<String> iniCentroids,int k){
+	public static Map<String,ArrayList<ArrayList<String>>> initialClustering(Map<String,ArrayList<String>> points,Map<Integer,ArrayList<String>> iniCentroids,int k){
 		Map<String,ArrayList<ArrayList<String>>> cluster=new HashMap<String,ArrayList<ArrayList<String>>>();
 		Map<Integer,ArrayList<String>> centroids=new HashMap<Integer,ArrayList<String>>();
 		ArrayList<ArrayList<String>> emptyList=new ArrayList<ArrayList<String>>();
 		int temp=0;
-		for(String s:iniCentroids){
+		/*for(String s:iniCentroids){
 			centroids.put(++temp, points.get(s));
-		}
+		}*/
 		System.out.println("centroids map: "+centroids);
 		float currentSSE=getSSE();
 		float minSSE=Float.MAX_VALUE;
 		int i=0;
 		//while(i<k&&currentSSE<minSSE){
-			for(Map.Entry<String, ArrayList<String>> entry:points.entrySet()){
-				float minDistance=Float.MAX_VALUE;
-				String centroidIndex=null;
-				for(String s:iniCentroids){
-					float xOfCentroid=Float.parseFloat(points.get(s).get(0));
-					float yOfCentroid=Float.parseFloat(points.get(s).get(1));
-					float x=Float.parseFloat(entry.getValue().get(0));
-					float y=Float.parseFloat(entry.getValue().get(1));
-					float distance=getDistance(xOfCentroid, yOfCentroid, x, y);
-					if(distance<minDistance){
-						minDistance=distance;
-						centroidIndex=s;
-					}
+		for(Map.Entry<String, ArrayList<String>> entry:points.entrySet()){
+			float minDistance=Float.MAX_VALUE;
+			String centroidIndex=null;
+			//for(String s:iniCentroids){
+			for(Map.Entry<Integer, ArrayList<String>> iniEntry:iniCentroids.entrySet()){
+				float xOfCentroid=Float.parseFloat(points.get(iniEntry.getKey().toString()).get(0));
+				float yOfCentroid=Float.parseFloat(points.get(iniEntry.getKey().toString()).get(1));
+				float x=Float.parseFloat(entry.getValue().get(0));
+				float y=Float.parseFloat(entry.getValue().get(1));
+				float distance=getDistance(xOfCentroid, yOfCentroid, x, y);
+				if(distance<minDistance){
+					minDistance=distance;
+					centroidIndex=iniEntry.getKey().toString();
 				}
-				if(cluster.containsKey(centroidIndex)){
-					cluster.get(centroidIndex).add(entry.getValue());
-				}else{
-					emptyList.add(entry.getValue());
-					cluster.put(centroidIndex, emptyList);
+			}
+			if(cluster.containsKey(centroidIndex)){
+				cluster.get(centroidIndex).add(entry.getValue());
+			}else{
+				emptyList.add(entry.getValue());
+				cluster.put(centroidIndex, emptyList);
 				//}
 			}
-		//}
+		}
 		System.out.println("INITIAL CLUSTERING "+ cluster);
 		return cluster;
 	}
